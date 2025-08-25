@@ -1,0 +1,16 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Pod Memory Usage",
+      "targets": [
+        {
+          "expr": "sum(container_memory_usage_bytes) by (pod)"
+        }
+      ]
+    }
+  ]
+}
