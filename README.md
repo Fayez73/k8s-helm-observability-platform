@@ -105,26 +105,8 @@ kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 ```
 7.1. Create an Argo CD Application for Observability stack:
-```bash
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: observability
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/<your-org>/observability-as-code
-    targetRevision: main
-    path: charts
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-```
+ - Found in argocd-apps directory
+ 
 7.2. Apply the app
 ```bash
 kubectl apply -f argocd-apps/observability.yaml
