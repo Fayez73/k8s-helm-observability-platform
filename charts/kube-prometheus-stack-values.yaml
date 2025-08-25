@@ -9,17 +9,26 @@ prometheus:
           resources:
             requests:
               storage: 10Gi
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - prometheus.example.com # replace with your domain
+    tls:
+      - secretName: prometheus-tls
+        hosts:
+          - prometheus.example.com # replace with your domain
 
 grafana:
   ingress:
     enabled: true
     ingressClassName: nginx
     hosts:
-      - grafana.example.com
+      - grafana.example.com # replace with your domain
     tls:
       - secretName: grafana-tls
         hosts:
-          - grafana.example.com
+          - grafana.example.com # replace with your domain
   adminUser: admin
   adminPassword: prom-operator
   persistence:
