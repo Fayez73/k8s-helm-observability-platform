@@ -119,3 +119,14 @@ kubectl apply -f argocd-apps/observability.yaml
 ```bash
 kubectl port-forward svc/grafana -n monitoring 3000:80
 ```
+
+OPTIONAL PROMETHEUS EXPOSURE
+```bash
+# Expose both Grafana and Prometheus
+export EXPOSE_PROMETHEUS=true
+./scripts/setup.sh
+
+# Expose only Grafana
+export EXPOSE_PROMETHEUS=false
+./scripts/setup.sh
+```
