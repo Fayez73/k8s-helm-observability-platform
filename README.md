@@ -47,4 +47,59 @@ observability-as-code/
 └─ scripts/
    └─ setup.sh            # Script for Helm installs
 
+```
+---
+
+## 🚀 Deployment Steps
+
+1. Prerequisites
+
+- A running Kubernetes cluster (EKS/GKE/AKS/Kind/Minikube)
+
+- kubectl and helm installed
+
+- (Optional) argocd CLI for GitOps setup
+
+2. Create Namespaces
+```bash
+kubectl create namespace monitoring
+kubectl create namespace logging
+```
+
+3. Install Prometheus
+```bash
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+  -n monitoring \
+  -f charts/prometheus-values.yaml
+
+```
+4. Install Grafana
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm upgrade --install grafana grafana/grafana \
+  -n monitoring \
+  -f charts/grafana-values.yaml
+```
+
+5. Install Loki (for logs)
+```bash
+helm upgrade --install loki grafana/loki-stack \
+  -n logging \
+  -f charts/loki-values.yaml
+```
+6. Install Tempo (for traces)
+```bash
+helm upgrade --install tempo grafana/tempo \
+  -n monitoring \
+  -f charts/tempo-values.yaml
+```
+
+7. GitOps with Argo CD (optional)
+```bash
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
 
