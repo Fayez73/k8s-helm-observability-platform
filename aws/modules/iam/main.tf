@@ -8,9 +8,17 @@ locals {
 # cert-manager trust + policy (Route53 DNS-01)
 data "aws_iam_policy_document" "cert_manager_trust" {
   statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    effect  = "Allow"
-    principals { type = "Federated", identifiers = [local.oidc_provider_arn] }
+    effect = "Allow"
+
+    actions = [
+      "sts:AssumeRoleWithWebIdentity"
+    ]
+
+    principals {
+      type        = "Federated"
+      identifiers = [local.oidc_provider_arn]
+    }
+
     condition {
       test     = "StringEquals"
       variable = "${replace(local.oidc_provider, "https://", "")}:sub"
@@ -18,6 +26,7 @@ data "aws_iam_policy_document" "cert_manager_trust" {
     }
   }
 }
+
 
 data "aws_iam_policy_document" "cert_manager_policy" {
   statement {
@@ -51,7 +60,10 @@ data "aws_iam_policy_document" "external_dns_trust" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     effect  = "Allow"
-    principals { type = "Federated", identifiers = [local.oidc_provider_arn] }
+    principals { 
+        type = "Federated" 
+        identifiers = [local.oidc_provider_arn] 
+    }
     condition {
       test     = "StringEquals"
       variable = "${replace(local.oidc_provider, "https://", "")}:sub"
