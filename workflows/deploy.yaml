@@ -1,0 +1,151 @@
+name: Deploy Infra and Observability
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        type: choice
+        options: [dev, prod]
+        default: dev
+      expose_prometheus:
+        description: "Expose Prometheus via Ingress"
+        type: choice
+        options: [true, false]
+        default: false
+
+env:
+  TF_IN_AUTOMATION: true
+  AWS_REGION: eu-west-1
+
+jobs:
+  terraform:
+    name: Provision AWS (VPC + EKS + IRSA)
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      cluster_name: ${{ steps.tf_outputs.outputs.cluster_name }}
+      region: ${{ steps.tf_outputs.outputs.region }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Select environment
+        id: envpick
+        run: |
+          if [ -n "${{ github.event.inputs.environment }}" ]; then
+            echo "ENV=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            echo "ENV=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Terraform Init
+        working-directory: infra/envs/${{ steps.envpick.outputs.ENV }}
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infra/envs/${{ steps.envpick.outputs.ENV }}
+        run: terraform plan -var-file=../../tfvars/${{ steps.envpick.outputs.ENV }}.tfvars
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        working-directory: infra/envs/${{ steps.envpick.outputs.ENV }}
+        run: terraform apply -auto-approve -var-file=../../tfvars/${{ steps.envpick.outputs.ENV }}.tfvars
+
+      - name: Export TF outputs
+        id: tf_outputs
+        working-directory: infra/envs/${{ steps.envpick.outputs.ENV }}
+        run: |
+          echo "cluster_name=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
+          echo "region=${{ env.AWS_REGION }}" >> $GITHUB_OUTPUT
+
+  apps:
+    name: Deploy Observability Stack
+    runs-on: ubuntu-latest
+    needs: terraform
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      CLUSTER_NAME: ${{ needs.terraform.outputs.cluster_name }}
+      AWS_REGION:   ${{ needs.terraform.outputs.region }}
+      EXPOSE_PROMETHEUS: ${{ github.event.inputs.expose_prometheus || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Configure kubeconfig
+        run: |
+          aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$AWS_REGION"
+          kubectl cluster-info
+
+      - name: Namespaces and cert-manager
+        run: |
+          kubectl apply -f manifests/namespace.yaml
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+          # Optional: wait until cert-manager is ready
+          kubectl wait --for=condition=Available deployment/cert-manager -n cert-manager --timeout=180s || true
+          # ClusterIssuer (ensure your Route53/DNS-01 details are correct)
+          kubectl apply -f manifests/cert-manager/clusterissuer.yaml
+
+      - name: Add Helm repos
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+
+      - name: Deploy kube-prometheus-stack
+        run: |
+          helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+            -n monitoring --create-namespace \
+            -f charts/kube-prometheus-stack-values.yaml
+
+      - name: Deploy Loki
+        run: |
+          # If you use loki-stack instead, adjust chart and values accordingly
+          helm upgrade --install loki grafana/loki \
+            -n logging --create-namespace \
+            -f charts/loki-values.yaml
+
+      - name: Deploy Tempo
+        run: |
+          helm upgrade --install tempo grafana/tempo \
+            -n monitoring \
+            -f charts/tempo-values.yaml
+
+      - name: RBAC and Dashboards
+        run: |
+          kubectl apply -f manifests/rbac.yaml
+          kubectl apply -f manifests/dashboards/
+
+      - name: Ingress (Grafana and optional Prometheus)
+        run: |
+          kubectl apply -f manifests/ingress-grafana.yaml
+          if [ "$EXPOSE_PROMETHEUS" = "true" ]; then
+            kubectl apply -f manifests/ingress-prometheus.yaml
+          fi
