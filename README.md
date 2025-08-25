@@ -32,20 +32,23 @@ It covers **metrics, logs, and traces** in a GitOps-style deployment with suppor
 ## 📂 Project Structure
 ```bash
 observability-as-code/
-├─ README.md
-├─ charts/                # Custom Helm chart overrides
-│  ├─ prometheus-values.yaml
-│  ├─ grafana-values.yaml
+├─ README.md                       # Project overview, setup instructions
+├─ scripts/                        # Automation scripts
+│  ├─ setup.sh                     # Installs Helm charts and dashboards
+│  └─ destroy.sh                   # Uninstalls everything
+├─ charts/                         # Helm chart overrides/values
+│  ├─ kube-prometheus-stack-values.yaml
 │  ├─ loki-values.yaml
 │  └─ tempo-values.yaml
-├─ manifests/             # Optional extra YAML configs
-│  ├─ ingress.yaml
+├─ manifests/                       # Optional extra K8s YAMLs
+│  ├─ namespace.yaml
 │  ├─ rbac.yaml
-│  └─ dashboards/
-│      ├─ k8s-overview.json
-│      └─ pod-performance.json
-└─ scripts/
-   └─ setup.sh            # Script for Helm installs
+│  ├─ ingress-grafana.yaml
+│  └─ dashboards/                  # Dashboards as code
+│     ├─ k8s-overview.json
+│     └─ pod-performance.json
+└─ Makefile                         # Convenience commands for setup/destroy/port-forward
+
 
 ```
 ---
@@ -101,7 +104,7 @@ helm upgrade --install tempo grafana/tempo \
 kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 ```
-7.1 Create an Argo CD Application for Observability stack:
+7.1. Create an Argo CD Application for Observability stack:
 ```bash
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -122,7 +125,7 @@ spec:
       prune: true
       selfHeal: true
 ```
-7.2 Apply the app
+7.2. Apply the app
 ```bash
 kubectl apply -f argocd-apps/observability.yaml
 ```
