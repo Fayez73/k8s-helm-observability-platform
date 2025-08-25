@@ -55,6 +55,10 @@ observability-as-code/
 
 ## 🚀 Deployment Steps
 
+- Running the setup script will deploy everything
+```bash
+scripts/setup.sh
+```
 1. Prerequisites
 
 - A running Kubernetes cluster (EKS/GKE/AKS/Kind/Minikube)
@@ -106,7 +110,7 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/st
 ```
 7.1. Create an Argo CD Application for Observability stack:
  - Found in argocd-apps directory
- 
+
 7.2. Apply the app
 ```bash
 kubectl apply -f argocd-apps/observability.yaml
