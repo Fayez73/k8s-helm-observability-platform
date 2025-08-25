@@ -1,0 +1,23 @@
+# kube-prometheus-stack default overrides
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+grafana:
+  adminUser: admin
+  adminPassword: prom-operator
+  persistence:
+    enabled: true
+    size: 5Gi
+  dashboards:
+    default:
+      k8s-overview.json:
+        file: ../manifests/dashboards/k8s-overview.json
+      pod-performance.json:
+        file: ../manifests/dashboards/pod-performance.json

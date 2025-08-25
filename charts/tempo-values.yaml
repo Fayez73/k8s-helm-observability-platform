@@ -1,0 +1,6 @@
+tempo:
+  persistence:
+    enabled: true
+    size: 5Gi
+  compactor:
+    compaction_enabled: true
