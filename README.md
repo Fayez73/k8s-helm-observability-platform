@@ -1,10 +1,12 @@
 # k8s-helm-observability-platform
 
-# 🚀 Observability Stack on Kubernetes (GitOps + Helm)
+# 🚀 Observability Stack on Kubernetes (GitOps + Helm + AWS)
 
 ## 🔹 Project Overview
 This project builds a **production-ready observability stack** on Kubernetes using Helm charts.  
 It covers **metrics, logs, and traces** in a GitOps-style deployment with support for Argo CD or Flux.
+
+This stack is deployed on EKS via terraform
 
 ---
 
@@ -24,7 +26,7 @@ It covers **metrics, logs, and traces** in a GitOps-style deployment with suppor
 - **Prometheus** → Metrics & alerting  
 - **Grafana** → Dashboards, logs, traces visualization  
 - **Loki / Tempo** → Logs + traces  
-- **Terraform (optional)** → Cluster + Helm releases automation  
+- **Terraform** → Cluster + Helm releases automation  
 - **Argo CD / Flux (optional)** → GitOps workflow  
 
 ---
@@ -33,21 +35,22 @@ It covers **metrics, logs, and traces** in a GitOps-style deployment with suppor
 ```bash
 observability-as-code/
 ├─ README.md                       # Project overview, setup instructions
-├─ scripts/                        # Automation scripts
-│  ├─ setup.sh                     # Installs Helm charts and dashboards
-│  └─ destroy.sh                   # Uninstalls everything
-├─ charts/                         # Helm chart overrides/values
-│  ├─ kube-prometheus-stack-values.yaml
-│  ├─ loki-values.yaml
-│  └─ tempo-values.yaml
-├─ manifests/                       # Optional extra K8s YAMLs
-│  ├─ namespace.yaml
-│  ├─ rbac.yaml
-│  ├─ ingress-grafana.yaml
-│  └─ dashboards/                  # Dashboards as code
-│     ├─ k8s-overview.json
-│     └─ pod-performance.json
-└─ Makefile                         # Convenience commands for setup/destroy/port-forward
+├── argocd-apps
+├── aws
+│   ├── envs
+│   │   ├── dev
+│   │   └── prod
+│   └── modules
+│       ├── eks
+│       ├── iam
+│       └── vpc
+├── charts
+├── manifests
+│   ├── alert-manager
+│   ├── cert-manager
+│   └── dashboards
+├── scripts
+└── workflows
 
 
 ```
