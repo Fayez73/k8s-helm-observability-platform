@@ -5,7 +5,6 @@ module "vpc" {
   version = "~> 5.8"
 
   name = var.name
-  cidr = var.cidr
 
   azs             = var.azs
   private_subnets = var.private_subnets

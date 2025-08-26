@@ -92,5 +92,4 @@ resource "aws_iam_role_policy_attachment" "external_dns" {
   policy_arn = aws_iam_policy.external_dns.arn
 }
 
-output "role_arn_cert_manager"   { value = aws_iam_role.cert_manager.arn }
-output "role_arn_external_dns"   { value = aws_iam_role.external_dns.arn }
+

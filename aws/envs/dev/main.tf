@@ -1,7 +1,7 @@
 module "vpc" {
   source             = "../../modules/vpc"
   name               = "${var.name_prefix}-vpc"
-  cidr               = var.vpc_cidr
+  cidr_block         = var.vpc_cidr
   azs                = var.azs
   private_subnets    = var.private_subnets
   public_subnets     = var.public_subnets
@@ -24,11 +24,12 @@ module "eks" {
 }
 
 module "iam" {
-  source            = "../../modules/iam"
-  name_prefix       = var.name_prefix
-  oidc_provider     = module.eks.oidc_provider
-  oidc_provider_arn = module.eks.oidc_provider_arn
-  tags              = var.tags
+  source                  = "../../modules/iam"
+  name_prefix             = var.name_prefix
+  cluster_name            = module.eks.cluster_name
+  oidc_provider           = module.eks.oidc_provider
+  oidc_provider_arn       = module.eks.oidc_provider_arn
+  service_account_namespace = "cert-manager"
+  service_account_name      = "cert-manager"
+  tags                    = var.tags
 }
-
-output "cluster_name" { value = module.eks.cluster_name }
