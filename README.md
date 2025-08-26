@@ -38,7 +38,6 @@ observability-as-code/
 ├── argocd-apps
 ├── aws
 │   ├── envs
-│   │   ├── dev
 │   │   └── prod
 │   └── modules
 │       ├── eks
